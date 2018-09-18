@@ -1,0 +1,69 @@
+#!/bin/sh
+# Nagios Plugin to Check for SMB share access
+#Prashanth Pullaikodi
+
+REVISION=1.0
+PROGNAME=`/bin/basename $0`
+PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
+
+. $PROGPATH/utils.sh
+
+usage () {
+    echo "\
+Nagios plugin to check for SAMBA Share.
+
+Usage:
+  $PROGNAME -H <host> -s <"sharename">
+  $PROGNAME -H <host> -s <"sharename">
+  $PROGNAME --help
+  $PROGNAME --version
+"
+}
+
+help () {
+    print_revision $PROGNAME $REVISION
+    echo; usage; echo; support
+}
+
+if [ $# -lt 1 ]; then
+    usage
+    exit $STATE_UNKNOWN
+fi
+
+
+while test -n "$1"; do
+    case "$1" in
+	--help | -h)
+	    help
+	    exit $STATE_OK;;
+	--version | -V)
+	    print_revision $PROGNAME $REVISION
+	    exit $STATE_OK;;
+	-H)
+	    shift
+	    host="$1";;
+	-s)
+	    shift
+	    share="$1";;
+	*)
+	    usage; exit $STATE_UNKNOWN;;
+    esac
+shift
+done
+#Make sure auth file secrets has been created under conf/my.auth
+
+cmd2="mkdir testdir;cd testdir;put test.txt;rm test.txt;cd .. ;rmdir testdir;exit;"
+
+stdout1=`/usr/bin/smbclient -A conf/my.auth "//$host/$share" -c "exit;" 2>&1`
+stdout=`/usr/bin/smbclient -A conf/my.auth  "//$host/$share" -c "$cmd2" 2>&1`
+sharetest=`echo "$stdout" | grep -o "$share" |head -n 1`
+
+if [ "$sharetest" = "$share" ]; then
+	echo "OK SMB Share: "//$host/$share" is Accessible "
+	exit $STATE_OK
+else
+	err=`echo "$stdout"|grep -v 'Server=' `
+#	err1=`echo "$stdout" | head -n 1`
+	echo "CRITICAL SMB Share: "$share" "$err""
+	exit $STATE_CRITICAL
+fi
