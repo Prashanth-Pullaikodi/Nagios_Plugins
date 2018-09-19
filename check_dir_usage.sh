@@ -3,7 +3,7 @@
 #Purpose:Calculate the user Home directory usage mounted on local Disk.
 ######
 #Prashanth Pullaikodi
-DIR=/home/pullaikodi/Get_Data
+DIR="Mentioned the dir name here"
 DU=/usr/bin/du
 TAIL=/usr/bin/tail
 AWK=/bin/awk
